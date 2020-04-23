@@ -1,3 +1,4 @@
+# -*-coding:utf-8-*-
 import json
 import threading
 import urllib.request
@@ -78,7 +79,7 @@ def insertDocument(data):
             url = f'{movie_url}comments?start=' \
                   + str(20 * page) + \
                   '&limit=20&sort=new_score&status=P'
-            print(f'当前线程:{threading.current_thread()};当前处理: {movie_name} ---> 第 {(page + 1)} 页的评论;目标URL地址:{url}\n')
+            print(f'当前线程:{threading.current_thread()};当前处理: {movie_name} ---> 第 {(page + 1)} 页的评论;目标URL地址:{url}')
             for i in getComment(url):
                 files.write(i)
                 files.write('\n')
