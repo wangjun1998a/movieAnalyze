@@ -1,5 +1,7 @@
 import json
+import time
 import urllib.request
+import threading
 
 import requests
 from bs4 import BeautifulSoup
@@ -34,51 +36,66 @@ def getComment(url):
     comments = soupComment.findAll('span', 'short')
     onePageComments = []
     for comment in comments:
-        # print(comment.getText()+'\n')
         onePageComments.append(comment.getText() + '\n')
 
     return onePageComments
 
 
-def get_data():
+def getData(count):
     """
     获取豆瓣首页的热门电影数据
-    :return:
+    :param count: 需要爬取的数据条数
+    :return: 数据集合
     """
-    url = 'https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&page_limit=300&page_start=0'
-    # url = 'https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&sort=recommend&page_limit=330&page_start=0'
+    url = f'https://movie.douban.com/j/search_subjects?type=movie&tag=%E7%83%AD%E9%97%A8&page_limit={count}&page_start=0'
     headers = {
-        # 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
         'User-Agent': header
     }
     json_data = requests.get(url, headers=headers)
-    # print(json_data.text)
     data = json_data.text
     json_data = json.loads(data)
     subjects = json_data['subjects']
-    result = []
+    results = []
     for movie in subjects:
         row = {
             'movie_rate': movie['rate'],
             'movie_name': movie['title'],
             'movie_url': movie['url']
         }
-        result.append(row)
-    return result
+        results.append(row)
+    return results
+
+
+def insertDocument(data):
+    """
+    插入文档
+    :param data: 数据聚集合
+    :return: 无返回值
+    """
+    movie_name = data.get('movie_name')
+    with open(file=f'files/{movie_name}.txt', mode='w', encoding="utf-8") as files:
+        movie_url = data.get('movie_url')
+        for page in range(10):  # 豆瓣爬取多页评论需要验证。
+            url = f'{movie_url}comments?start=' \
+                  + str(20 * page) + \
+                  '&limit=20&sort=new_score&status=P'
+            print(f'当前线程:{threading.current_thread()};当前处理: {movie_name}--->第{(page + 1)}页的评论;当前URL地址:{url}\n')
+            for i in getComment(url):
+                files.write(i)
+                files.write('\n')
+
+
+def customThread(data):
+    """
+    自定义线程
+    :param data: 数据集合
+    :return: 无返回值
+    """
+
+    ts = [threading.Thread(target=insertDocument, args=(d,)) for d in data]
+    for t in ts:
+        t.start()
 
 
 if __name__ == '__main__':
-    # f = open('我不是药神page10.txt', 'w', encoding='utf-8')
-    result = get_data()
-    for res in result:
-        movie_url = res.get('movie_url')
-        for page in range(10):  # 豆瓣爬取多页评论需要验证。
-            url = f'{movie_url}comments?start=' + str(
-                20 * page) + '&limit=20&sort=new_score&status=P'
-            print('第%s页的评论:' % (page + 1))
-            print(url + '\n')
-
-            for i in getComment(url):
-                # f.write(i)
-                print(i)
-            print('-' * 60)
+    customThread(getData(5))
