@@ -1,6 +1,7 @@
 #!/user/bin/python
 # -*-coding:utf-8-*-
 import json
+import os
 import re
 import threading
 import urllib.request
@@ -18,12 +19,14 @@ def iterFiles():
     打开文件
     :return: 无返回值
     """
-    with open(file='files/绅士们.txt', mode="r", encoding='utf-8')as file:
-        while True:
-            result = file.readline()
-            if not result or result == "":
-                break
-            handlingText(result)
+    rootDir = './files'
+    list = os.listdir(rootDir)
+    for node in list:
+        print(node, '-' * 100)
+        with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
+            results = file.readlines()
+            for res in range(len(results)):
+                handlingText(results[res])
 
 
 def handlingText(text):
@@ -121,5 +124,5 @@ def insertDocument(data):
 
 
 if __name__ == '__main__':
-    insertDocument(getData(1))
-    # iterFiles()
+    # insertDocument(getData(5))
+    iterFiles()
