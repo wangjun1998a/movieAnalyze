@@ -14,6 +14,17 @@ from snownlp import SnowNLP
 header = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
 
 
+def handlingText(text):
+    """
+    词性分析
+    :param text: 句子
+    :return: 无返回值
+    """
+    s = SnowNLP(text)
+    print(s.words)
+    print(text, s.sentiments)
+
+
 def iterFiles():
     """
     打开文件
@@ -27,17 +38,6 @@ def iterFiles():
             results = file.readlines()
             for res in range(len(results)):
                 handlingText(results[res])
-
-
-def handlingText(text):
-    """
-    词性分析
-    :param text: 句子
-    :return: 无返回值
-    """
-    s = SnowNLP(text)
-    print(s.words)
-    print(text, s.sentiments)
 
 
 def getHtml(url):
