@@ -1,6 +1,8 @@
+#!/user/bin/python
 # -*-coding:utf-8-*-
 import json
 import threading
+import time
 import urllib.request
 
 import requests
@@ -34,6 +36,7 @@ def getComment(url):
     soupComment = BeautifulSoup(html, 'html.parser')
 
     comments = soupComment.findAll('span', 'short')
+    star = soupComment.findAll('span', 'allstar20 rating')
     onePageComments = []
     for comment in comments:
         onePageComments.append(comment.getText() + '\n')
@@ -73,7 +76,7 @@ def insertDocument(data):
     :return: 无返回值
     """
     movie_name = data.get('movie_name')
-    with open(file=f'files/{movie_name}.txt', mode='w', encoding="utf-8") as files:
+    with open(file=f'./files/{movie_name}.txt', mode='w', encoding="utf-8") as files:
         movie_url = data.get('movie_url')
         for page in range(10):  # 豆瓣爬取多页评论需要验证。
             url = f'{movie_url}comments?start=' \
@@ -82,7 +85,6 @@ def insertDocument(data):
             print(f'当前线程:{threading.current_thread()};当前处理: {movie_name} ---> 第 {(page + 1)} 页的评论;目标URL地址:{url}')
             for i in getComment(url):
                 files.write(i)
-                files.write('\n')
 
 
 def customThread(data):
@@ -98,4 +100,4 @@ def customThread(data):
 
 
 if __name__ == '__main__':
-    customThread(getData(5))
+    customThread(getData(1))
