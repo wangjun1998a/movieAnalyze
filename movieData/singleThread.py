@@ -14,6 +14,33 @@ from snownlp import SnowNLP
 header = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
 
 
+def iterList(rootDir, node):
+    """
+    遍历文件列表
+    :param rootDir: 根路径
+    :param node: 文件名称
+    :return: 无返回值
+    """
+    print(node, '-' * 100)
+    with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
+        results = file.readlines()
+        for res in range(len(results)):
+            handlingText(results[res])
+
+
+def customThread(rootDir, data):
+    """
+    自定义多线程
+    :param rootDir: 根路径
+    :param data: 数据集合
+    :return: 无返回值
+    """
+
+    ts = [threading.Thread(target=iterList, args=(rootDir, d,)) for d in data]
+    for t in ts:
+        t.start()
+
+
 def handlingText(text):
     """
     词性分析
@@ -21,7 +48,7 @@ def handlingText(text):
     :return: 无返回值
     """
     s = SnowNLP(text)
-    print(s.words)
+    # print(s.words)
     print(text, s.sentiments)
 
 
@@ -32,12 +59,13 @@ def iterFiles():
     """
     rootDir = './files'
     list = os.listdir(rootDir)
-    for node in list:
-        print(node, '-' * 100)
-        with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
-            results = file.readlines()
-            for res in range(len(results)):
-                handlingText(results[res])
+    customThread(rootDir, list)
+    # for node in list:
+    #     print(node, '-' * 100)
+    #     with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
+    #         results = file.readlines()
+    #         for res in range(len(results)):
+    #             handlingText(results[res])
 
 
 def getHtml(url):
