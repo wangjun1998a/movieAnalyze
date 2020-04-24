@@ -14,6 +14,17 @@ from snownlp import SnowNLP
 header = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
 
 
+def handlingText(text):
+    """
+    词性分析
+    :param text: 句子
+    :return: 无返回值
+    """
+    s = SnowNLP(text)
+    # print(s.words)
+    print(f'当前线程:{threading.current_thread()};', text, s.sentiments)
+
+
 def iterList(rootDir, node):
     """
     遍历文件列表
@@ -24,32 +35,14 @@ def iterList(rootDir, node):
     print(node, '-' * 100)
     with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
         results = file.readlines()
+        print(results)
+        map = {'力荐': 1, '推荐': 0.5, '还行': 0, '较差': -0.5, '很差': -1}
         for res in range(len(results)):
-            handlingText(results[res])
-
-
-def customThread(rootDir, data):
-    """
-    自定义多线程
-    :param rootDir: 根路径
-    :param data: 数据集合
-    :return: 无返回值
-    """
-
-    ts = [threading.Thread(target=iterList, args=(rootDir, d,)) for d in data]
-    for t in ts:
-        t.start()
-
-
-def handlingText(text):
-    """
-    词性分析
-    :param text: 句子
-    :return: 无返回值
-    """
-    s = SnowNLP(text)
-    # print(s.words)
-    print(text, s.sentiments)
+            print(results[res][0:3])
+            # print(results[res].replace('\n', ''))
+        # if results[res].split()[0] in map.keys():
+        # print(results[res].split()[0])
+        # handlingText(results[res])
 
 
 def iterFiles():
@@ -59,13 +52,8 @@ def iterFiles():
     """
     rootDir = './files'
     list = os.listdir(rootDir)
-    customThread(rootDir, list)
-    # for node in list:
-    #     print(node, '-' * 100)
-    #     with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
-    #         results = file.readlines()
-    #         for res in range(len(results)):
-    #             handlingText(results[res])
+    for d in list:
+        iterList(rootDir, d)
 
 
 def getHtml(url):
@@ -98,9 +86,7 @@ def getComment(url):
         grade = ''
         if div.find_all('span', re.compile('rating')):
             grade = div.find_all('span', re.compile('rating'))[0].attrs['title']
-        else:
-            grade = '无评分'
-        onePageComments.append(grade + " " + text + '\n')
+            onePageComments.append(grade + " " + text + '\n')
     return onePageComments
 
 
