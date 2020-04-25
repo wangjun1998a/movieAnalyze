@@ -6,6 +6,7 @@ import re
 import threading
 import urllib.request
 
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from snownlp import SnowNLP
@@ -38,11 +39,18 @@ def iterList(rootDir, node):
         print(results)
         map = {'力荐': 1, '推荐': 0.5, '还行': 0, '较差': -0.5, '很差': -1}
         for res in range(len(results)):
-            print(results[res][0:3])
-            # print(results[res].replace('\n', ''))
-        # if results[res].split()[0] in map.keys():
-        # print(results[res].split()[0])
-        # handlingText(results[res])
+            # 将分词转换成 DataFrame
+            article = pd.DataFrame({"word": [results[res][0:2]]})
+            # 将词汇字典也转换成 DataFrame
+            wordId = pd.DataFrame({"word": [s[0] for s in map.items()], "id": [s[1] for s in map.items()]})
+            # 对字典设置索引
+            wordId.set_index("word")
+            # 进行匹配
+            df_inner = pd.merge(article, wordId, how="inner")
+            # 正确匹配数值
+            if len(list(df_inner["id"])):
+                print(len(list(df_inner["id"])), " --->  ", list(df_inner["id"]))
+                # TODO 完成数值的存取逻辑
 
 
 def iterFiles():
