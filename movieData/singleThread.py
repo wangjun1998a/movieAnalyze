@@ -6,13 +6,75 @@ import re
 import threading
 import urllib.request
 
+import jieba
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from snownlp import SnowNLP
+from pyecharts.charts import Bar, WordCloud
 
 # 头文件
 header = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
+
+
+def produceCharts(xData, yData, node):
+    """
+    图形展示
+    :return: 无返回值
+    """
+    bar = Bar()
+    bar.add_xaxis(xData)
+    bar.add_yaxis("次数", yData)
+    # render 会生成本地 HTML 文件，默认会在当前目录生成 render.html 文件
+    # 也可以传入路径参数，如 bar.render("mycharts.html")
+    bar.render(f"./histogram/{node.replace('.txt', '.html')}")
+
+
+def analysisWords(rootDir, node):
+    """
+    词云分析
+    :param rootDir: 路径
+    :param node: 文件名称
+    :return: 无返回值
+    """
+
+    # TODO 词云的数据展示
+    # 读取文件并去除用户评分数据
+    with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
+        content = file.read() \
+            .replace('力荐 ', '') \
+            .replace('推荐 ', '') \
+            .replace('还行 ', '') \
+            .replace('较差 ', '') \
+            .replace('很差 ', '')
+        cut = jieba.cut(content)
+        seaCut = jieba.cut_for_search(content)
+        # 截取数据
+        cut_content = ' '.join(cut)
+        # 分割成数组
+        cut_content = cut_content.split(' ')
+        # TODO 使用字典去存储数据
+        wordMap = {}
+        for c in cut_content:
+            if wordMap.get(c):
+                # 如果值存在 拿出来然后+1
+                wordMap[c] = int(wordMap.get(c)) + 1
+            else:
+                wordMap[c] = 1
+        # 移除错误数据
+        wordMap.pop('')
+        # TODO 提取字典转换成元祖,放入数组中
+        wordArray = []
+        for key in wordMap:
+            if len(key) == 1:
+                continue
+            else:
+                wordArray.append((key, wordMap[key]))
+
+    # 创建词云对象
+    (WordCloud()
+     .add(series_name="热点分析", data_pair=wordArray, word_size_range=[6, 66])
+     .render(f"./wordCloud/{node.replace('.txt', '.html')}"))
 
 
 def handlingText(text):
@@ -23,7 +85,9 @@ def handlingText(text):
     """
     s = SnowNLP(text)
     # print(s.words)
-    print(f'当前线程:{threading.current_thread()};', text, s.sentiments)
+    # print(f'当前线程:{threading.current_thread()};', text, s.sentiments)
+    # print(f'当前线程:{threading.current_thread()};', text)
+    return s.sentiments
 
 
 def iterList(rootDir, node):
@@ -36,9 +100,24 @@ def iterList(rootDir, node):
     print(node, '-' * 100)
     with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
         results = file.readlines()
-        print(results)
         map = {'力荐': 1, '推荐': 0.5, '还行': 0, '较差': -0.5, '很差': -1}
+        # 柱状图X轴
+        xData = [key for key in map.keys()]
+        # 柱状图Y轴
+        yData = []
+        # 力荐次数
+        testimonials = 0
+        # 推荐次数
+        recommend = 0
+        # 还行次数
+        ok = 0
+        # 较差次数
+        poor = 0
+        # 很差次数
+        bad = 0
         for res in range(len(results)):
+            # 情感分析数值
+            emotionalScore = handlingText(results[res])
             # 将分词转换成 DataFrame
             article = pd.DataFrame({"word": [results[res][0:2]]})
             # 将词汇字典也转换成 DataFrame
@@ -49,8 +128,35 @@ def iterList(rootDir, node):
             df_inner = pd.merge(article, wordId, how="inner")
             # 正确匹配数值
             if len(list(df_inner["id"])):
-                print(len(list(df_inner["id"])), " --->  ", list(df_inner["id"]))
-                # TODO 完成数值的存取逻辑
+                flag = False
+                if 1 >= round(float(emotionalScore), 2) >= 0.8 and int(list(df_inner["id"])[0]) == 1:
+                    flag = True
+                    testimonials += 1
+                elif 0.8 > round(float(emotionalScore), 2) >= 0.6 and int(list(df_inner["id"])[0]) == 0.5:
+                    flag = True
+                    recommend += 1
+                elif 0.6 > round(float(emotionalScore), 2) >= 0.5 and int(list(df_inner["id"])[0]) == 0:
+                    flag = True
+                    ok += 1
+                elif 0.5 > round(float(emotionalScore), 2) >= 0.3 and int(list(df_inner["id"])[0]) == -0.5:
+                    flag = True
+                    poor += 1
+                elif 0.3 > round(float(emotionalScore), 2) >= 0 and int(list(df_inner["id"])[0]) == -1:
+                    flag = True
+                    bad += 1
+
+                if flag:
+                    print(emotionalScore, " --->  ", list(df_inner["id"]))
+        # TODO 数值存入数组中 yData
+        yData.append(testimonials)
+        yData.append(recommend)
+        yData.append(ok)
+        yData.append(poor)
+        yData.append(bad)
+        # TODO 柱状图生成
+        produceCharts(xData, yData, node)
+        # TODO 数据分析(词云)
+        analysisWords(rootDir, node)
 
 
 def iterFiles():
