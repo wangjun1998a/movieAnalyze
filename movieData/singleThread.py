@@ -128,29 +128,16 @@ def iterList(rootDir, node):
             df_inner = pd.merge(article, wordId, how="inner")
             # 正确匹配数值
             if len(list(df_inner["id"])):
-                flag = False
-                # print(float(emotionalScore))
-                if float(0.8) <= float(emotionalScore) <= float(1) and int(list(df_inner["id"])[0]) == 1:
-                    flag = True
+                if float(0.8) <= emotionalScore <= float(1) and float(list(df_inner["id"])[0]) == 1:
                     testimonials += 1
-                elif float(0.6) < float(emotionalScore) <= float(0.8) and int(list(df_inner["id"])[0]) == 0.5:
-                    flag = True
+                elif float(0.6) < emotionalScore <= float(0.8) and float(list(df_inner["id"])[0]) == 0.5:
                     recommend += 1
-                elif float(0.5) < float(emotionalScore) <= float(0.6) and int(list(df_inner["id"])[0]) == 0:
-                    flag = True
+                elif float(0.5) < emotionalScore <= float(0.6) and float(list(df_inner["id"])[0]) == 0:
                     ok += 1
-                elif float(0.3) < float(emotionalScore) <= float(0.50) and int(list(df_inner["id"])[0]) == -0.5:
-                    flag = True
+                elif float(0.3) < emotionalScore <= float(0.50) and float(list(df_inner["id"])[0]) == -0.5:
                     poor += 1
-                elif float(0) < float(emotionalScore) <= float(0.30) and int(list(df_inner["id"])[0]) == -1:
-                    flag = True
+                elif float(0) < emotionalScore <= float(0.30) and float(list(df_inner["id"])[0]) == -1:
                     bad += 1
-
-                if flag:
-                    # print(emotionalScore, " --->  ", int(list(df_inner["id"][0])))
-                    print(emotionalScore, " --->  ", list(df_inner['id'])[0])
-                    print(round(float(emotionalScore), 2), " --->  ", list(df_inner['id'])[0])
-                flag = False
         # TODO 数值存入数组中 yData
         yData.append(testimonials)
         yData.append(recommend)
