@@ -41,35 +41,61 @@ def analysisWords(rootDir, node):
     # TODO 词云的数据展示
     # 读取文件并去除用户评分数据
     with open(file=f'{rootDir}/{node}', mode="r", encoding='utf-8')as file:
-        content = file.read() \
-            .replace('力荐 ', '') \
-            .replace('推荐 ', '') \
-            .replace('还行 ', '') \
-            .replace('较差 ', '') \
-            .replace('很差 ', '')
-        cut = jieba.cut(content)
-        seaCut = jieba.cut_for_search(content)
-        # 截取数据
-        cut_content = ' '.join(cut)
-        # 分割成数组
-        cut_content = cut_content.split(' ')
-        # TODO 使用字典去存储数据
-        wordMap = {}
-        for c in cut_content:
-            if wordMap.get(c):
-                # 如果值存在 拿出来然后+1
-                wordMap[c] = int(wordMap.get(c)) + 1
-            else:
-                wordMap[c] = 1
-        # 移除错误数据
-        wordMap.pop('')
-        # TODO 提取字典转换成元祖,放入数组中
-        wordArray = []
-        for key in wordMap:
-            if len(key) == 1:
-                continue
-            else:
-                wordArray.append((key, wordMap[key]))
+        contents = file.readlines()
+        map = {'力荐': 1, '推荐': 0.5, '还行': 0, '较差': -0.5, '很差': -1}
+        arr_content = []
+        for res in range(len(contents)):
+            # 情感分析数值
+            emotionalScore = handlingText(contents[res])
+            # 将分词转换成 DataFrame
+            article = pd.DataFrame({"word": [contents[res][0:2]]})
+            # 将词汇字典也转换成 DataFrame
+            wordId = pd.DataFrame({"word": [s[0] for s in map.items()], "id": [s[1] for s in map.items()]})
+            # 对字典设置索引
+            wordId.set_index("word")
+            # 进行匹配
+            df_inner = pd.merge(article, wordId, how="inner")
+            # 正确匹配数值
+            if len(list(df_inner["id"])):
+                flag = False
+                if float(0.8) <= emotionalScore <= float(1) and float(list(df_inner["id"])[0]) == 1:
+                    flag = True
+                elif float(0.6) < emotionalScore <= float(0.8) and float(list(df_inner["id"])[0]) == 0.5:
+                    flag = True
+                elif float(0.5) < emotionalScore <= float(0.6) and float(list(df_inner["id"])[0]) == 0:
+                    flag = True
+                elif float(0.3) < emotionalScore <= float(0.50) and float(list(df_inner["id"])[0]) == -0.5:
+                    flag = True
+                elif float(0) < emotionalScore <= float(0.30) and float(list(df_inner["id"])[0]) == -1:
+                    flag = True
+
+                if flag:
+                    cut = jieba.cut(contents[res].replace('力荐 ', '').replace('推荐 ', '')
+                                    .replace('还行 ', '').replace('较差 ', '')
+                                    .replace('很差 ', ''))
+                    cut_content = ' '.join(cut)
+                    cut_content = cut_content.split(' ')
+                    for cc in cut_content:
+                        arr_content.append(cc)
+    print(arr_content)
+    # TODO 下面代码不用改，上面有数组了
+    # TODO 使用字典去存储数据
+    wordMap = {}
+    for c in arr_content:
+        if wordMap.get(c):
+            # 如果值存在 拿出来然后+1
+            wordMap[c] = int(wordMap.get(c)) + 1
+        else:
+            wordMap[c] = 1
+    # 移除错误数据
+    wordMap.pop('')
+    # TODO 提取字典转换成元祖,放入数组中
+    wordArray = []
+    for key in wordMap:
+        if len(key) == 1:
+            continue
+        else:
+            wordArray.append((key, wordMap[key]))
 
     # 创建词云对象
     (WordCloud()
@@ -128,15 +154,15 @@ def iterList(rootDir, node):
             df_inner = pd.merge(article, wordId, how="inner")
             # 正确匹配数值
             if len(list(df_inner["id"])):
-                if float(0.8) <= emotionalScore <= float(1) and float(list(df_inner["id"])[0]) == 1:
+                if float(list(df_inner["id"])[0]) == 1:
                     testimonials += 1
-                elif float(0.6) < emotionalScore <= float(0.8) and float(list(df_inner["id"])[0]) == 0.5:
+                elif float(list(df_inner["id"])[0]) == 0.5:
                     recommend += 1
-                elif float(0.5) < emotionalScore <= float(0.6) and float(list(df_inner["id"])[0]) == 0:
+                elif float(list(df_inner["id"])[0]) == 0:
                     ok += 1
-                elif float(0.3) < emotionalScore <= float(0.50) and float(list(df_inner["id"])[0]) == -0.5:
+                elif float(list(df_inner["id"])[0]) == -0.5:
                     poor += 1
-                elif float(0) < emotionalScore <= float(0.30) and float(list(df_inner["id"])[0]) == -1:
+                elif float(list(df_inner["id"])[0]) == -1:
                     bad += 1
         # TODO 数值存入数组中 yData
         yData.append(testimonials)
