@@ -99,7 +99,7 @@ def analysisWords(rootDir, node):
 
     # 创建词云对象
     (WordCloud()
-     .add(series_name="热点分析", data_pair=wordArray, word_size_range=[6, 66])
+     .add(series_name="热点分析", data_pair=wordArray, word_size_range=[6, 66], width='200px', height='200px')
      .render(f"./wordCloud/{node.replace('.txt', '.html')}"))
 
 
